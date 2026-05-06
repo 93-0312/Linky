@@ -9,6 +9,18 @@ import { useCategoryStore } from "./useCategoryStore";
 
 WebBrowser.maybeCompleteAuthSession();
 
+let isBrowserOpen = false;
+
+async function openAuthBrowser(url: string, redirectUrl: string) {
+  if (isBrowserOpen) return null;
+  isBrowserOpen = true;
+  try {
+    return await WebBrowser.openAuthSessionAsync(url, redirectUrl);
+  } finally {
+    isBrowserOpen = false;
+  }
+}
+
 interface AuthState {
   user: User | null;
   session: Session | null;
@@ -57,11 +69,22 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     if (error || !data.url) return;
 
-    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+    const result = await openAuthBrowser(data.url, redirectUrl);
+    if (!result) return;
 
     if (result.type === "success" && result.url) {
-      const { error: sessionError } = await supabase.auth.exchangeCodeForSession(result.url);
-      if (sessionError) console.warn("OAuth session error:", sessionError.message);
+      const fragment = result.url.split("#")[1] ?? "";
+      const params = new URLSearchParams(fragment);
+      const accessToken = params.get("access_token");
+      const refreshToken = params.get("refresh_token");
+
+      if (accessToken && refreshToken) {
+        const { error: sessionError } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+        if (sessionError) console.warn("OAuth session error:", sessionError.message);
+      } else {
+        const { error: sessionError } = await supabase.auth.exchangeCodeForSession(result.url);
+        if (sessionError) console.warn("OAuth session error:", sessionError.message);
+      }
     }
   },
 
@@ -79,6 +102,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
 
     const redirectUrl = Linking.createURL("/");
+    console.log("[Kakao] redirectUrl:", redirectUrl);
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "kakao",
@@ -90,13 +114,25 @@ export const useAuthStore = create<AuthState>((set) => ({
       },
     });
 
-    if (error || !data.url) return;
+    if (error || !data.url) { console.warn("[Kakao] OAuth error:", error); return; }
 
-    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+    const result = await openAuthBrowser(data.url, redirectUrl);
+    if (!result) return;
+    console.log("[Kakao] browser result:", result.type, "url" in result ? result.url : "");
 
     if (result.type === "success" && result.url) {
-      const { error: sessionError } = await supabase.auth.exchangeCodeForSession(result.url);
-      if (sessionError) console.warn("Kakao OAuth session error:", sessionError.message);
+      const fragment = result.url.split("#")[1] ?? "";
+      const params = new URLSearchParams(fragment);
+      const accessToken = params.get("access_token");
+      const refreshToken = params.get("refresh_token");
+
+      if (accessToken && refreshToken) {
+        const { error: sessionError } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+        if (sessionError) console.warn("[Kakao] session error:", sessionError.message);
+      } else {
+        const { error: sessionError } = await supabase.auth.exchangeCodeForSession(result.url);
+        if (sessionError) console.warn("[Kakao] session error:", sessionError.message);
+      }
     }
   },
 

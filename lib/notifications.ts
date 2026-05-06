@@ -12,6 +12,10 @@ export async function registerPushToken(userId: string): Promise<void> {
 
   if (status !== "granted") return;
 
-  const { data: token } = await Notifications.getExpoPushTokenAsync();
-  await profilesApi.upsert({ id: userId, push_token: token });
+  try {
+    const { data: token } = await Notifications.getExpoPushTokenAsync();
+    await profilesApi.upsert({ id: userId, push_token: token });
+  } catch (e) {
+    console.warn("[Push] 토큰 등록 실패 (무료 계정 또는 시뮬레이터):", e);
+  }
 }
