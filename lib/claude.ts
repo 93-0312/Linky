@@ -1,4 +1,10 @@
-import { AIProcessResult, ContentType, DerivedIdea, DrillDownResult, TitleOption } from "../types";
+import {
+  AIProcessResult,
+  ContentType,
+  DerivedIdea,
+  DrillDownResult,
+  TitleOption,
+} from "../types";
 
 // ─── OpenRouter 설정 ──────────────────────────────────────────────────────────
 //
@@ -9,7 +15,7 @@ import { AIProcessResult, ContentType, DerivedIdea, DrillDownResult, TitleOption
 // 추천: "anthropic/claude-sonnet-4-5" / "anthropic/claude-haiku-4-5" (저렴)
 //
 const OPENROUTER_API_KEY = process.env.EXPO_PUBLIC_OPENROUTER_API_KEY ?? "";
-const MODEL = "anthropic/claude-haiku-4-5"; // Haiku: sonnet 대비 10배 저렴, 품질 충분
+const MODEL = "openai/gpt-5.3-chat";
 
 // ─── 시스템 프롬프트 ──────────────────────────────────────────────────────────
 
@@ -87,7 +93,10 @@ async function callOpenRouter(text: string): Promise<AIProcessResult> {
   if (!content) throw new Error("OpenRouter: 빈 응답");
 
   // 모델에 따라 ```json ... ``` 코드펜스로 감싸서 오는 경우 제거
-  const json = content.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
+  const json = content
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```\s*$/, "")
+    .trim();
   return JSON.parse(json) as AIProcessResult;
 }
 
@@ -167,9 +176,15 @@ function extractMemoDetails(text: string): {
     .filter(Boolean);
 
   const titleLine =
-    lines.find((l) => l.startsWith("제목:"))?.replace(/^제목:\s*/, "").trim() ?? null;
+    lines
+      .find((l) => l.startsWith("제목:"))
+      ?.replace(/^제목:\s*/, "")
+      .trim() ?? null;
   const memoLine =
-    lines.find((l) => l.startsWith("메모:"))?.replace(/^메모:\s*/, "").trim() ?? null;
+    lines
+      .find((l) => l.startsWith("메모:"))
+      ?.replace(/^메모:\s*/, "")
+      .trim() ?? null;
 
   const primary = titleLine || (memoLine ? memoLine.split(/\s+/)[0] : null);
   const scene = memoLine ? memoLine.slice(0, 48) : (lines[0] ?? null);
@@ -189,9 +204,14 @@ function extractMemoDetails(text: string): {
 function pick3DistinctTypes(seedText: string): [IdeaType, IdeaType, IdeaType] {
   const all: IdeaType[] = ["유머형", "감성형", "공감형", "정보형", "도전형"];
   let hash = 0;
-  for (let i = 0; i < seedText.length; i++) hash = (hash * 31 + seedText.charCodeAt(i)) >>> 0;
+  for (let i = 0; i < seedText.length; i++)
+    hash = (hash * 31 + seedText.charCodeAt(i)) >>> 0;
   const start = hash % all.length;
-  return [all[start], all[(start + 2) % all.length], all[(start + 4) % all.length]];
+  return [
+    all[start],
+    all[(start + 2) % all.length],
+    all[(start + 4) % all.length],
+  ];
 }
 
 function buildDerivedIdeasFromMemo({
@@ -257,8 +277,11 @@ function buildTitleOptionsFromMemo({
 
   return [
     { formula: "숫자+행동+결과", title: `${keyword} 7일 해보고 바뀐 것 3가지` },
-    { formula: "역발상",         title: `${scene}에서 ${keyword}를 '반대로' 해봤더니…` },
-    { formula: "타겟호명",       title: `${keyword} 하다가 ${hook} 경험 있는 사람?` },
+    {
+      formula: "역발상",
+      title: `${scene}에서 ${keyword}를 '반대로' 해봤더니…`,
+    },
+    { formula: "타겟호명", title: `${keyword} 하다가 ${hook} 경험 있는 사람?` },
   ];
 }
 
@@ -330,6 +353,9 @@ async function callDrillDownOpenRouter(
   const content: string = data.choices?.[0]?.message?.content ?? "";
   if (!content) throw new Error("OpenRouter: 빈 응답");
 
-  const json = content.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
+  const json = content
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```\s*$/, "")
+    .trim();
   return JSON.parse(json) as DrillDownResult;
 }
