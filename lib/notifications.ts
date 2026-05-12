@@ -1,5 +1,6 @@
 import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
+import Constants from "expo-constants";
 import { profilesApi } from "./api/profilesApi";
 
 export async function registerPushToken(userId: string): Promise<void> {
@@ -13,7 +14,12 @@ export async function registerPushToken(userId: string): Promise<void> {
   if (status !== "granted") return;
 
   try {
-    const { data: token } = await Notifications.getExpoPushTokenAsync();
+    const projectId =
+      Constants.expoConfig?.extra?.eas?.projectId ??
+      Constants.easConfig?.projectId;
+    const { data: token } = await Notifications.getExpoPushTokenAsync(
+      projectId ? { projectId } : undefined,
+    );
     await profilesApi.upsert({ id: userId, push_token: token });
   } catch (e) {
     console.warn("[Push] 토큰 등록 실패 (무료 계정 또는 시뮬레이터):", e);

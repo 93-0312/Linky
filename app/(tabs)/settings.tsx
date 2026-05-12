@@ -116,7 +116,7 @@ export default function MyPage() {
   const { colors } = useAppTheme();
   const { categories } = useCategoryStore();
   const { notes } = useChatStore();
-  const { user, signOut } = useAuthStore();
+  const { user, signOut, deleteAccount } = useAuthStore();
   const router = useRouter();
   const {
     userName,
@@ -268,6 +268,44 @@ export default function MyPage() {
       "버전 정보",
       "Linky v1.0.0\n\nAI 아이디어 인큐베이션 앱\n© 2026 Linky Team",
       [{ text: "확인" }]
+    );
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "회원 탈퇴",
+      "탈퇴하면 모든 아이디어와 데이터가 영구 삭제됩니다.\n정말 탈퇴하시겠어요?",
+      [
+        { text: "취소", style: "cancel" },
+        {
+          text: "탈퇴하기",
+          style: "destructive",
+          onPress: () => {
+            Alert.alert(
+              "마지막 확인",
+              "이 작업은 되돌릴 수 없습니다.\n정말 탈퇴하시겠어요?",
+              [
+                { text: "취소", style: "cancel" },
+                {
+                  text: "탈퇴",
+                  style: "destructive",
+                  onPress: async () => {
+                    try {
+                      await deleteAccount();
+                      router.replace("/login" as never);
+                    } catch (e) {
+                      Alert.alert(
+                        "오류",
+                        e instanceof Error ? e.message : "탈퇴 처리 중 오류가 발생했습니다."
+                      );
+                    }
+                  },
+                },
+              ]
+            );
+          },
+        },
+      ]
     );
   };
 
@@ -660,6 +698,14 @@ export default function MyPage() {
               style={{ paddingVertical: 14 }}
             >
               <Text style={{ fontSize: 15, color: "#EF4444" }}>로그아웃</Text>
+            </TouchableOpacity>
+            <View style={{ height: 0.5, backgroundColor: colors.border }} />
+            <TouchableOpacity
+              onPress={handleDeleteAccount}
+              activeOpacity={0.7}
+              style={{ paddingVertical: 14 }}
+            >
+              <Text style={{ fontSize: 15, color: colors.textTertiary }}>회원 탈퇴</Text>
             </TouchableOpacity>
           </View>
         </View>
