@@ -30,6 +30,7 @@ interface AuthState {
   signInWithGoogle: () => Promise<void>;
   signInWithKakao: () => Promise<void>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -134,6 +135,37 @@ export const useAuthStore = create<AuthState>((set) => ({
         if (sessionError) console.warn("[Kakao] session error:", sessionError.message);
       }
     }
+  },
+
+  deleteAccount: async () => {
+    const session = await supabase.auth.getSession();
+    const jwt = session.data.session?.access_token;
+    if (!jwt) throw new Error("로그인 상태가 아닙니다.");
+
+    const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "";
+    const res = await fetch(`${supabaseUrl}/functions/v1/delete-account`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${jwt}` },
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error ?? "탈퇴 처리 중 오류가 발생했습니다.");
+    }
+
+    useChatStore.setState({
+      messages: [],
+      notes: [],
+      initialized: false,
+      pendingNoteId: null,
+      drillDownResults: {},
+      drillingDownKeys: [],
+      generatingIds: [],
+      isTyping: false,
+      isRecording: false,
+    });
+    useCategoryStore.setState({ categories: [], initialized: false });
+    set({ user: null, session: null });
   },
 
   signOut: async () => {
