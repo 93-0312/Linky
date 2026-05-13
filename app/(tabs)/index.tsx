@@ -259,11 +259,11 @@ export default function NoteScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* 채팅 피드 + 입력창: 키보드 올라올 때 함께 밀려 올라감 */}
+      {/* 채팅 피드 + 입력창: iOS는 KAV로 처리, Android는 adjustPan이 시스템 레벨 처리 */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "padding"}
-        keyboardVerticalOffset={0}
+        behavior="padding"
+        enabled={Platform.OS === "ios"}
       >
         <FlatList
           ref={listRef}

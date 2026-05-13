@@ -1,5 +1,5 @@
 import React, { forwardRef, useCallback, useEffect, useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import BottomSheet, {
   BottomSheetBackdrop,
   BottomSheetScrollView,
@@ -35,6 +35,7 @@ export const FolderFormSheet = forwardRef<FolderFormSheetRef, Props>(
     const [name, setName] = useState("");
     const [selectedEmoji, setSelectedEmoji] = useState("📁");
     const [selectedColor, setSelectedColor] = useState("#1A6DFF");
+    const [isOpen, setIsOpen] = useState(false);
 
     const isEditing = !!editingFolder;
 
@@ -88,6 +89,10 @@ export const FolderFormSheet = forwardRef<FolderFormSheetRef, Props>(
     );
 
     return (
+      <View
+        style={StyleSheet.absoluteFillObject}
+        pointerEvents={isOpen ? "box-none" : "none"}
+      >
       <BottomSheet
         ref={ref}
         index={-1}
@@ -96,7 +101,10 @@ export const FolderFormSheet = forwardRef<FolderFormSheetRef, Props>(
         backdropComponent={renderBackdrop}
         backgroundStyle={{ backgroundColor: colors.surface }}
         handleIndicatorStyle={{ backgroundColor: colors.border, width: 36, height: 4 }}
-        onChange={(index) => { if (index === -1) onClose?.(); }}
+        onChange={(index) => {
+          setIsOpen(index >= 0);
+          if (index === -1) onClose?.();
+        }}
       >
         <BottomSheetScrollView
           contentContainerStyle={{ paddingBottom: 48 }}
@@ -288,6 +296,7 @@ export const FolderFormSheet = forwardRef<FolderFormSheetRef, Props>(
           </View>
         </BottomSheetScrollView>
       </BottomSheet>
+      </View>
     );
   }
 );

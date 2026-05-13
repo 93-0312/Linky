@@ -117,8 +117,9 @@ export const NoteCard: React.FC<Props> = ({ note, folderName = "초안", onPress
     <ReanimatedSwipeable
       ref={swipeRef}
       renderRightActions={() => <RightAction onDelete={handleDelete} />}
-      rightThreshold={40}
+      rightThreshold={60}
       overshootRight={false}
+      friction={2}
     >
       {card}
     </ReanimatedSwipeable>

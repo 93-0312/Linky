@@ -3,6 +3,7 @@ import {
   Keyboard,
   Platform,
   ScrollView,
+  StyleSheet,
   Text,
   TouchableOpacity,
   View,
@@ -42,6 +43,7 @@ export const IdeaFormSheet = forwardRef<IdeaFormSheetRef, Props>(
     const [tagInput, setTagInput] = useState("");
     const [tags, setTags] = useState<string[]>([]);
     const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+    const [isOpen, setIsOpen] = useState(false);
     const saveNote = useSaveNote();
     const updateNote = useUpdateNote();
     const { categories } = useCategoryStore();
@@ -143,6 +145,11 @@ export const IdeaFormSheet = forwardRef<IdeaFormSheetRef, Props>(
     const canSave = title.trim().length > 0 || content.trim().length > 0;
 
     return (
+      // pointerEvents="none" 시 닫힌 BottomSheet의 GestureDetector가 뒤 화면 터치를 가로채는 문제 방지
+      <View
+        style={StyleSheet.absoluteFillObject}
+        pointerEvents={isOpen ? "box-none" : "none"}
+      >
       <BottomSheet
         ref={ref}
         index={-1}
@@ -155,10 +162,11 @@ export const IdeaFormSheet = forwardRef<IdeaFormSheetRef, Props>(
           width: 36,
           height: 4,
         }}
-        keyboardBehavior={Platform.OS === "ios" ? "extend" : "interactive"}
+        keyboardBehavior="extend"
         keyboardBlurBehavior="restore"
-        android_keyboardInputMode="adjustResize"
+        android_keyboardInputMode="adjustPan"
         onChange={(index) => {
+          setIsOpen(index >= 0);
           if (index === -1) onClose?.();
         }}
       >
@@ -419,6 +427,7 @@ export const IdeaFormSheet = forwardRef<IdeaFormSheetRef, Props>(
           </View>
         </BottomSheetScrollView>
       </BottomSheet>
+      </View>
     );
   }
 );
