@@ -2,11 +2,12 @@ import { create } from "zustand";
 import { supabase } from "../lib/supabase";
 import { Category, DEFAULT_CATEGORIES } from "../types";
 import { useAuthStore } from "./useAuthStore";
+import { generateId } from "../lib/uuid";
 
 const buildDefaults = (userId: string): Category[] =>
   DEFAULT_CATEGORIES.map((c, i) => ({
     ...c,
-    id: crypto.randomUUID(),
+    id: generateId(),
     userId,
     createdAt: new Date(),
   }));
@@ -79,7 +80,7 @@ export const useCategoryStore = create<CategoryState>((set, get) => ({
   addCategory: async ({ name, color, icon }) => {
     const userId = useAuthStore.getState().user?.id ?? "";
     const newCat: Category = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       userId,
       name,
       color,

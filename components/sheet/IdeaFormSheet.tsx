@@ -64,6 +64,13 @@ export const IdeaFormSheet = forwardRef<IdeaFormSheetRef, Props>(
       }
     }, [editingNote?.id, defaultCategoryId]);
 
+    // 카테고리가 비동기로 로드된 뒤 selectedCategoryId가 아직 null이면 첫 번째 카테고리로 세팅
+    useEffect(() => {
+      if (selectedCategoryId === null && categories.length > 0) {
+        setSelectedCategoryId(defaultCategoryId ?? categories[0].id);
+      }
+    }, [categories.length]);
+
     const handleTagInputChange = (text: string) => {
       if (text.endsWith(",") || text.endsWith(" ")) {
         const trimmed = text.slice(0, -1).trim();

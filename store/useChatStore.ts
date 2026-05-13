@@ -4,6 +4,7 @@ import { ChatMessage, DerivedIdea, DrillDownResult, Note } from "../types";
 import { drillDownIdea, processIdea } from "../lib/claude";
 import { useCategoryStore } from "./useCategoryStore";
 import { useAuthStore } from "./useAuthStore";
+import { generateId } from "../lib/uuid";
 
 let _msgId = 0;
 const msgId = () => `msg-${++_msgId}-${Date.now()}`;
@@ -142,7 +143,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const userId = useAuthStore.getState().user?.id ?? "local";
       const now = Date.now();
       const note: Note = {
-        id: crypto.randomUUID(),
+        id: generateId(),
         userId,
         rawContent: text,
         summary: result.summary,
@@ -252,7 +253,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   saveNote: ({ title, content, tags, categoryId = null }) => {
     const note: Note = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       userId: useAuthStore.getState().user?.id ?? "local",
       rawContent: content,
       summary: content.slice(0, 60),
