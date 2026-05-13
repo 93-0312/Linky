@@ -148,7 +148,7 @@ export default function NoteDetailScreen() {
   const hasAIData = note.derivedIdeas.length > 0 || note.titleOptions.length > 0;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top", "bottom"]}>
       <StatusBar style="dark" />
 
       {/* 헤더 */}

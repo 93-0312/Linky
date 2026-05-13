@@ -141,7 +141,7 @@ export default function FolderDetailScreen() {
           alignItems: "center",
           justifyContent: "center",
         }}
-        edges={["top"]}
+        edges={["top", "bottom"]}
       >
         <Text style={{ color: colors.textTertiary, fontSize: 15 }}>폴더를 찾을 수 없어요</Text>
         <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16 }}>
@@ -205,7 +205,7 @@ export default function FolderDetailScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top", "bottom"]}>
       <StatusBar style="dark" />
 
       {/* Header */}

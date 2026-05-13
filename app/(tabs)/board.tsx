@@ -426,7 +426,7 @@ export default function BoardScreen() {
   const { notes, updateNoteCategory } = useChatStore();
   const folderSheetRef = useRef<FolderFormSheetRef>(null);
   const [query, setQuery] = useState("");
-  const [boardHeight, setBoardHeight] = useState(480);
+  const [boardHeight, setBoardHeight] = useState(Math.round(SCREEN_WIDTH * 1.2));
 
   // Drag state
   const [draggingNoteId, setDraggingNoteId] = useState<string | null>(null);
@@ -513,6 +513,11 @@ export default function BoardScreen() {
 
   const handleDragStart = useCallback(
     (note: Note, _ox: number, _oy: number, w: number, _h: number) => {
+      // 드래그 직전에 ScrollView 화면 좌표 갱신 (edge-to-edge 환경 대응)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (hScrollRef.current as any)?.measureInWindow((x: number) => {
+        scrollViewScreenX.current = x;
+      });
       draggingNoteRef.current = note;
       dragCardWidthRef.current = w;
       setDraggingNote(note);
