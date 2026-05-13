@@ -1,5 +1,6 @@
 import React, { FC, useState } from "react";
 import { Alert, Platform, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCategoryStore } from "../../store/useCategoryStore";
 import { useAppTheme } from "../../lib/theme";
 
@@ -18,6 +19,7 @@ export const InputBar: FC<Props> = ({
 }) => {
   const { colors } = useAppTheme();
   const { categories } = useCategoryStore();
+  const insets = useSafeAreaInsets();
   const [text, setText] = useState("");
 
   const selectedFolder = categories.find((c) => c.id === selectedCategoryId);
@@ -50,7 +52,7 @@ export const InputBar: FC<Props> = ({
         borderTopWidth: 0.5,
         borderTopColor: colors.border,
         paddingTop: 10,
-        paddingBottom: Platform.OS === "ios" ? 20 : 12,
+        paddingBottom: Platform.OS === "ios" ? Math.max(insets.bottom, 12) : 12,
         paddingHorizontal: 16,
         gap: 8,
       }}
@@ -116,7 +118,11 @@ export const InputBar: FC<Props> = ({
             onChangeText={setText}
             placeholder="아이디어를 적어보세요..."
             placeholderTextColor={colors.textTertiary}
-            style={{ color: colors.text, fontSize: 14, padding: 0 }}
+            style={{
+              color: colors.text,
+              fontSize: 14,
+              ...Platform.select({ ios: { padding: 0 } }),
+            }}
             onSubmitEditing={handleSend}
             returnKeyType="send"
             accessibilityLabel="아이디어 입력"

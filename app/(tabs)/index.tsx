@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { Alert, FlatList, Text, TouchableOpacity, View } from "react-native";
+import { Alert, FlatList, KeyboardAvoidingView, Platform, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
@@ -259,30 +259,36 @@ export default function NoteScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* 채팅 피드 */}
-      <FlatList
-        ref={listRef}
-        data={items}
-        keyExtractor={(item) => {
-          if (item.kind === "divider") return item.id;
-          if (item.kind === "message") return item.data.id;
-          return `note-${item.data.id}`;
-        }}
-        renderItem={renderItem}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 4, paddingBottom: 12 }}
-        onContentSizeChange={scrollToBottom}
-        ListFooterComponent={isTyping ? <TypingIndicator /> : null}
-        ListHeaderComponent={!hasUserContent ? <EmptyStateHint /> : null}
-        showsVerticalScrollIndicator={false}
-        testID="chat-list"
-      />
+      {/* 채팅 피드 + 입력창: 키보드 올라올 때 함께 밀려 올라감 */}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "padding"}
+        keyboardVerticalOffset={0}
+      >
+        <FlatList
+          ref={listRef}
+          data={items}
+          keyExtractor={(item) => {
+            if (item.kind === "divider") return item.id;
+            if (item.kind === "message") return item.data.id;
+            return `note-${item.data.id}`;
+          }}
+          renderItem={renderItem}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 4, paddingBottom: 12 }}
+          onContentSizeChange={scrollToBottom}
+          ListFooterComponent={isTyping ? <TypingIndicator /> : null}
+          ListHeaderComponent={!hasUserContent ? <EmptyStateHint /> : null}
+          showsVerticalScrollIndicator={false}
+          testID="chat-list"
+        />
 
-      <InputBar
-        onOpen={openSheet}
-        onSend={(text) => sendMessage(text, selectedCategoryId)}
-        selectedCategoryId={selectedCategoryId}
-        onCategoryChange={setSelectedCategoryId}
-      />
+        <InputBar
+          onOpen={openSheet}
+          onSend={(text) => sendMessage(text, selectedCategoryId)}
+          selectedCategoryId={selectedCategoryId}
+          onCategoryChange={setSelectedCategoryId}
+        />
+      </KeyboardAvoidingView>
 
       <IdeaFormSheet
         ref={sheetRef}
