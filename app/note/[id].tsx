@@ -133,8 +133,12 @@ export default function NoteDetailScreen() {
         text: "삭제",
         style: "destructive",
         onPress: () => {
-          deleteNote.mutate(note.id);
-          router.back();
+          // mutate의 onSuccess에서 back() 호출 — mutate와 router.back()을 동시에
+          // 실행하면 Android에서 스토어 업데이트 전에 네비게이션이 먼저 일어나
+          // 타이밍 문제가 발생함
+          deleteNote.mutate(note.id, {
+            onSuccess: () => router.back(),
+          });
         },
       },
     ]);
