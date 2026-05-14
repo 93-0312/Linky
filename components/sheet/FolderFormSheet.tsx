@@ -1,5 +1,5 @@
 import React, { forwardRef, useCallback, useEffect, useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Platform, Text, TouchableOpacity, View } from "react-native";
 import BottomSheet, {
   BottomSheetBackdrop,
   BottomSheetScrollView,
@@ -96,6 +96,9 @@ export const FolderFormSheet = forwardRef<FolderFormSheetRef, Props>(
         backdropComponent={renderBackdrop}
         backgroundStyle={{ backgroundColor: colors.surface }}
         handleIndicatorStyle={{ backgroundColor: colors.border, width: 36, height: 4 }}
+        keyboardBehavior={Platform.OS === "ios" ? "extend" : "interactive"}
+        keyboardBlurBehavior="restore"
+        android_keyboardInputMode="adjustResize"
         onChange={(index) => { if (index === -1) onClose?.(); }}
       >
         <BottomSheetScrollView

@@ -6,6 +6,16 @@ import { profilesApi } from "./api/profilesApi";
 export async function registerPushToken(userId: string): Promise<void> {
   if (Platform.OS === "web") return;
 
+  // Android 8.0+(API 26+)은 알림 채널이 없으면 푸시가 동작하지 않음
+  if (Platform.OS === "android") {
+    await Notifications.setNotificationChannelAsync("default", {
+      name: "기본 알림",
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: "#1A6DFF",
+    });
+  }
+
   const { status: existing } = await Notifications.getPermissionsAsync();
   const { status } = existing === "granted"
     ? { status: existing }

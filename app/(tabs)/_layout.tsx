@@ -1,11 +1,17 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppTheme } from "../../lib/theme";
 
 type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
 
 export default function TabsLayout() {
   const { colors } = useAppTheme();
+  const insets = useSafeAreaInsets();
+
+  // edgeToEdgeEnabled 환경에서 Android 시스템 내비게이션 바 높이를 포함해 탭바 높이 계산
+  const tabBarHeight = 54 + insets.bottom;
+  const tabBarPaddingBottom = insets.bottom > 0 ? insets.bottom : 12;
 
   return (
     <Tabs
@@ -17,8 +23,8 @@ export default function TabsLayout() {
           borderTopWidth: 0.5,
           elevation: 0,
           shadowOpacity: 0,
-          height: 83,
-          paddingBottom: 20,
+          height: tabBarHeight,
+          paddingBottom: tabBarPaddingBottom,
         },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textTertiary,
