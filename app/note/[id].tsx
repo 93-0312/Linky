@@ -36,14 +36,15 @@ function AISkeleton({ colors }: { colors: ReturnType<typeof import("../../lib/th
           borderRadius: 16,
           padding: 16,
           gap: 10,
+          overflow: "hidden",
         }}
       >
-        {[80, 120, 100].map((w, i) => (
+        {["72%", "50%", "64%"].map((w, i) => (
           <View
             key={i}
             style={{
               height: 14,
-              width: `${w}%`,
+              width: w,
               backgroundColor: colors.border,
               borderRadius: 7,
               opacity: 0.6,
@@ -57,14 +58,15 @@ function AISkeleton({ colors }: { colors: ReturnType<typeof import("../../lib/th
           borderRadius: 16,
           padding: 16,
           gap: 10,
+          overflow: "hidden",
         }}
       >
-        {[90, 110, 95].map((w, i) => (
+        {["80%", "60%", "70%"].map((w, i) => (
           <View
             key={i}
             style={{
               height: 14,
-              width: `${w}%`,
+              width: w,
               backgroundColor: colors.border,
               borderRadius: 7,
               opacity: 0.6,

@@ -3,6 +3,7 @@ import {
   Dimensions,
   Platform,
   ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -16,6 +17,8 @@ import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
+  withSpring,
+  withTiming,
   runOnJS,
   type SharedValue,
 } from "react-native-reanimated";
@@ -33,11 +36,6 @@ const COLUMN_WIDTH = Math.min(230, SCREEN_WIDTH * 0.65);
 const COLUMN_GAP = 12;
 const BOARD_PADDING = 20;
 
-const COLUMN_COLORS: Record<string, string> = {
-  초안: "#F4F4F8",
-  제작중: "#FFF8F0",
-  완료: "#F0FBF4",
-};
 
 // ─── Floating card (drag overlay) ────────────────────────────────────────────
 
@@ -50,8 +48,18 @@ interface FloatingCardProps {
 
 function FloatingCard({ note, dragX, dragY, cardWidth }: FloatingCardProps) {
   const { colors } = useAppTheme();
+  const scale = useSharedValue(0.96);
+
+  React.useEffect(() => {
+    scale.value = withSpring(1.04, { damping: 14, stiffness: 180 });
+  }, []);
+
   const animStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: dragX.value }, { translateY: dragY.value }],
+    transform: [
+      { translateX: dragX.value },
+      { translateY: dragY.value },
+      { scale: scale.value },
+    ],
   }));
 
   return (
@@ -147,6 +155,11 @@ function KanbanCard({
   const originY = useSharedValue(0);
   const cardW = useSharedValue(COLUMN_WIDTH - 24);
   const cardH = useSharedValue(80);
+  const pressScale = useSharedValue(1);
+
+  const pressStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pressScale.value }],
+  }));
 
   const navigate = useCallback(() => {
     router.push(`/note/${note.id}`);
@@ -166,8 +179,10 @@ function KanbanCard({
         .onBegin((e) => {
           originX.value = e.absoluteX - e.x;
           originY.value = e.absoluteY - e.y;
+          pressScale.value = withTiming(0.96, { duration: 400 });
         })
         .onStart(() => {
+          pressScale.value = withSpring(1);
           dragX.value = originX.value;
           dragY.value = originY.value;
           runOnJS(notifyDragStart)(
@@ -185,6 +200,7 @@ function KanbanCard({
           runOnJS(onDrop)(dragX.value, dragY.value);
         })
         .onFinalize(() => {
+          pressScale.value = withSpring(1);
           runOnJS(onDragCancel)();
         }),
     [notifyDragStart, onDrop, onDragCancel]
@@ -210,20 +226,23 @@ function KanbanCard({
           cardW.value = e.nativeEvent.layout.width;
           cardH.value = e.nativeEvent.layout.height;
         }}
-        style={{
-          backgroundColor: colors.surface,
-          borderRadius: 14,
-          borderWidth: 0.5,
-          borderColor: colors.border,
-          padding: 12,
-          marginBottom: 8,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.04,
-          shadowRadius: 4,
-          elevation: 1,
-          opacity: isDraggingThis ? 0 : 1,
-        }}
+        style={[
+          {
+            backgroundColor: colors.surface,
+            borderRadius: 14,
+            borderWidth: 0.5,
+            borderColor: colors.border,
+            padding: 12,
+            marginBottom: 8,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.04,
+            shadowRadius: 4,
+            elevation: 1,
+            opacity: isDraggingThis ? 0 : 1,
+          },
+          pressStyle,
+        ]}
       >
         <Text
           style={{
@@ -277,21 +296,12 @@ function KanbanCard({
           </View>
         )}
 
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <Text style={{ fontSize: 10, color: colors.textTertiary }}>
-            {note.createdAt.toLocaleDateString("ko-KR", {
-              month: "numeric",
-              day: "numeric",
-            })}
-          </Text>
-          <Ionicons name="reorder-three-outline" size={14} color={colors.textTertiary} />
-        </View>
+        <Text style={{ fontSize: 10, color: colors.textTertiary }}>
+          {note.createdAt.toLocaleDateString("ko-KR", {
+            month: "numeric",
+            day: "numeric",
+          })}
+        </Text>
       </Animated.View>
     </GestureDetector>
   );
@@ -325,7 +335,7 @@ function KanbanColumn({
   boardHeight,
 }: KanbanColumnProps) {
   const { colors } = useAppTheme();
-  const colBg = COLUMN_COLORS[category.name] ?? colors.surfaceElevated;
+  const colBg = category.color + "18";
 
   return (
     <View
@@ -689,16 +699,18 @@ export default function BoardScreen() {
           ))}
         </ScrollView>
 
-        {/* Floating drag card */}
-        {draggingNote && (
+      </View>
+
+      {draggingNote && (
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
           <FloatingCard
             note={draggingNote}
             dragX={dragX}
             dragY={dragY}
             cardWidth={dragCardWidth}
           />
-        )}
-      </View>
+        </View>
+      )}
 
       <FolderFormSheet ref={folderSheetRef} />
     </SafeAreaView>

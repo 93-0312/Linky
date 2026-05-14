@@ -3,6 +3,7 @@ import {
   Alert,
   Modal,
   Platform,
+  Pressable,
   ScrollView,
   Share,
   Text,
@@ -10,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { LinearGradient } from "expo-linear-gradient";
@@ -132,6 +134,8 @@ export default function MyPage() {
   } = useSettingsStore();
 
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showWhipModal, setShowWhipModal] = useState(false);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [editName, setEditName] = useState(userName);
   const [editPlatforms, setEditPlatforms] = useState<string[]>(platforms);
 
@@ -189,50 +193,9 @@ export default function MyPage() {
     );
   };
 
-  const handleNotificationSetting = () => {
-    const timeButtons = NOTIFICATION_TIMES.map((t) => ({
-      text: t.label + (notificationTime === t.value && notificationEnabled ? " ✓" : ""),
-      onPress: () => {
-        setNotificationEnabled(true, user?.id);
-        setNotificationTime(t.value, user?.id);
-      },
-    }));
-    Alert.alert(
-      "알림 설정",
-      "매일 알림을 받을 시간을 선택하세요.",
-      [
-        ...timeButtons,
-        {
-          text: notificationEnabled ? "알림 끄기" : "알림 끄는 중...",
-          style: "destructive" as const,
-          onPress: () => setNotificationEnabled(false, user?.id),
-        },
-        { text: "취소", style: "cancel" as const },
-      ]
-    );
-  };
+  const handleNotificationSetting = () => setShowNotificationModal(true);
 
-  const handleWhipLevel = () => {
-    Alert.alert(
-      "채찍질 강도",
-      "7일 리포트 메시지의 강도를 선택하세요.",
-      [
-        {
-          text: `🌱 가볍게${whipLevel === "light" ? " ✓" : ""}`,
-          onPress: () => setWhipLevel("light", user?.id),
-        },
-        {
-          text: `💪 보통${whipLevel === "normal" ? " ✓" : ""}`,
-          onPress: () => setWhipLevel("normal", user?.id),
-        },
-        {
-          text: `🔥 강하게${whipLevel === "hard" ? " ✓" : ""}`,
-          onPress: () => setWhipLevel("hard", user?.id),
-        },
-        { text: "취소", style: "cancel" as const },
-      ]
-    );
-  };
+  const handleWhipLevel = () => setShowWhipModal(true);
 
   const handleDarkMode = () => {
     Alert.alert(
@@ -449,6 +412,148 @@ export default function MyPage() {
             >
               <Text style={{ fontSize: 16, fontWeight: "700", color: "#FFFFFF" }}>저장</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 채찍질 강도 모달 */}
+      <Modal
+        visible={showWhipModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowWhipModal(false)}
+        statusBarTranslucent
+      >
+        <View style={{ flex: 1, justifyContent: "flex-end" }}>
+          <Pressable
+            style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.45)" }}
+            onPress={() => setShowWhipModal(false)}
+          />
+          <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 36 }}>
+            <View style={{ alignItems: "center", paddingTop: 12, paddingBottom: 4 }}>
+              <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: colors.border }} />
+            </View>
+            <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 20, borderBottomWidth: 0.5, borderBottomColor: colors.border }}>
+              <Text style={{ fontSize: 17, fontWeight: "700", color: colors.text, letterSpacing: -0.4 }}>채찍질 강도</Text>
+              <Text style={{ fontSize: 13, color: colors.textTertiary, marginTop: 4 }}>7일 리포트 메시지의 톤을 설정해요</Text>
+            </View>
+            <View style={{ padding: 16, gap: 10 }}>
+              {([
+                { value: "light", emoji: "🌱", label: "가볍게", desc: "따뜻하게 응원하는 메시지" },
+                { value: "normal", emoji: "💪", label: "보통", desc: "균형 잡힌 동기부여 메시지" },
+                { value: "hard",  emoji: "🔥", label: "강하게", desc: "강한 자극으로 목표를 달성해요" },
+              ] as const).map((item) => {
+                const isSelected = whipLevel === item.value;
+                return (
+                  <TouchableOpacity
+                    key={item.value}
+                    onPress={() => { setWhipLevel(item.value, user?.id); setShowWhipModal(false); }}
+                    activeOpacity={0.7}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 14,
+                      backgroundColor: isSelected ? colors.primarySoft : colors.surfaceElevated,
+                      borderRadius: 14,
+                      padding: 16,
+                      borderWidth: isSelected ? 1 : 0.5,
+                      borderColor: isSelected ? colors.primary : colors.border,
+                    }}
+                  >
+                    <Text style={{ fontSize: 26 }}>{item.emoji}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 15, fontWeight: isSelected ? "700" : "500", color: isSelected ? colors.primary : colors.text, letterSpacing: -0.3 }}>
+                        {item.label}
+                      </Text>
+                      <Text style={{ fontSize: 12, color: colors.textTertiary, marginTop: 2 }}>{item.desc}</Text>
+                    </View>
+                    {isSelected && <Ionicons name="checkmark-circle" size={22} color={colors.primary} />}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 알림 설정 모달 */}
+      <Modal
+        visible={showNotificationModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowNotificationModal(false)}
+        statusBarTranslucent
+      >
+        <View style={{ flex: 1, justifyContent: "flex-end" }}>
+          <Pressable
+            style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.45)" }}
+            onPress={() => setShowNotificationModal(false)}
+          />
+          <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 36 }}>
+            <View style={{ alignItems: "center", paddingTop: 12, paddingBottom: 4 }}>
+              <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: colors.border }} />
+            </View>
+            <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 20, borderBottomWidth: 0.5, borderBottomColor: colors.border }}>
+              <Text style={{ fontSize: 17, fontWeight: "700", color: colors.text, letterSpacing: -0.4 }}>알림 설정</Text>
+              <Text style={{ fontSize: 13, color: colors.textTertiary, marginTop: 4 }}>매일 알림을 받을 시간을 선택하세요</Text>
+            </View>
+            <ScrollView style={{ maxHeight: 380 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, gap: 8 }}>
+              {NOTIFICATION_TIMES.map((t) => {
+                const isSelected = notificationEnabled && notificationTime === t.value;
+                return (
+                  <TouchableOpacity
+                    key={t.value}
+                    onPress={() => {
+                      setNotificationEnabled(true, user?.id);
+                      setNotificationTime(t.value, user?.id);
+                      setShowNotificationModal(false);
+                    }}
+                    activeOpacity={0.7}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 14,
+                      backgroundColor: isSelected ? colors.primarySoft : colors.surfaceElevated,
+                      borderRadius: 14,
+                      paddingVertical: 14,
+                      paddingHorizontal: 16,
+                      borderWidth: isSelected ? 1 : 0.5,
+                      borderColor: isSelected ? colors.primary : colors.border,
+                    }}
+                  >
+                    <Ionicons name="alarm-outline" size={20} color={isSelected ? colors.primary : colors.textTertiary} />
+                    <Text style={{ flex: 1, fontSize: 15, fontWeight: isSelected ? "700" : "500", color: isSelected ? colors.primary : colors.text, letterSpacing: -0.3 }}>
+                      {t.label}
+                    </Text>
+                    {isSelected && <Ionicons name="checkmark-circle" size={22} color={colors.primary} />}
+                  </TouchableOpacity>
+                );
+              })}
+
+              {/* 알림 끄기 */}
+              <TouchableOpacity
+                onPress={() => { setNotificationEnabled(false, user?.id); setShowNotificationModal(false); }}
+                activeOpacity={0.7}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 14,
+                  backgroundColor: !notificationEnabled ? "#FEF2F2" : colors.surfaceElevated,
+                  borderRadius: 14,
+                  paddingVertical: 14,
+                  paddingHorizontal: 16,
+                  borderWidth: !notificationEnabled ? 1 : 0.5,
+                  borderColor: !notificationEnabled ? "#EF4444" : colors.border,
+                  marginTop: 4,
+                }}
+              >
+                <Ionicons name="notifications-off-outline" size={20} color={!notificationEnabled ? "#EF4444" : colors.textTertiary} />
+                <Text style={{ flex: 1, fontSize: 15, fontWeight: !notificationEnabled ? "700" : "500", color: !notificationEnabled ? "#EF4444" : colors.text, letterSpacing: -0.3 }}>
+                  알림 끄기
+                </Text>
+                {!notificationEnabled && <Ionicons name="checkmark-circle" size={22} color="#EF4444" />}
+              </TouchableOpacity>
+            </ScrollView>
           </View>
         </View>
       </Modal>

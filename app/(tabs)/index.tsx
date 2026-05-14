@@ -7,7 +7,7 @@ import { router } from "expo-router";
 import { ChatBubble } from "../../components/chat/ChatBubble";
 import { NoteCard } from "../../components/chat/NoteCard";
 import { AIStructureCard } from "../../components/chat/AIStructureCard";
-import { TypingIndicator } from "../../components/chat/TypingIndicator";
+import { NoteCardSkeleton } from "../../components/chat/NoteCardSkeleton";
 import { InputBar } from "../../components/chat/InputBar";
 import { IdeaFormSheet, IdeaFormSheetRef, EditingNote } from "../../components/sheet/IdeaFormSheet";
 import { useChatStore } from "../../store/useChatStore";
@@ -276,7 +276,7 @@ export default function NoteScreen() {
           renderItem={renderItem}
           contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 4, paddingBottom: 12 }}
           onContentSizeChange={scrollToBottom}
-          ListFooterComponent={isTyping ? <TypingIndicator /> : null}
+          ListFooterComponent={isTyping ? <NoteCardSkeleton /> : null}
           ListHeaderComponent={!hasUserContent ? <EmptyStateHint /> : null}
           showsVerticalScrollIndicator={false}
           testID="chat-list"
