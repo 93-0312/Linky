@@ -152,7 +152,17 @@ export const IdeaFormSheet = forwardRef<IdeaFormSheetRef, Props>(
         keyboardBlurBehavior="restore"
         android_keyboardInputMode="adjustResize"
         onChange={(index) => {
-          if (index === -1) onClose?.();
+          if (index === -1) {
+            onClose?.();
+          } else if (index >= 0 && editingNote) {
+            // 시트가 열릴 때마다 폼을 editingNote 최신값으로 재동기화
+            // (저장 후 close → 재오픈 시 폼이 비어있는 버그 방지)
+            setTitle(editingNote.title);
+            setContent(editingNote.content);
+            setTags(editingNote.tags);
+            setTagInput("");
+            setSelectedCategoryId(editingNote.categoryId ?? defaultCategoryId ?? categories[0]?.id ?? null);
+          }
         }}
       >
         <BottomSheetScrollView
