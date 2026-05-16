@@ -70,17 +70,32 @@ async function generateMessage(
   recentNotes: { title: string }[],
   staleNotes: { title: string }[]
 ): Promise<string | null> {
-  const whipDesc = { light: "가볍고 따뜻하게", normal: "적당히 자극적으로", hard: "강하고 직설적으로" };
+  const whipStyle = {
+    light: "따뜻하고 부드럽게. 응원하는 말투.",
+    normal: "적당히 자극적으로. 동기부여 말투.",
+    hard: "강하고 직설적으로. 자극적인 말투.",
+  };
 
-  const prompt = `크리에이터 "${userName}"의 콘텐츠 활동 현황:
-- 최근 7일 새 아이디어: ${recentNotes.length}개${recentNotes.length > 0 ? ` (${recentNotes.slice(0, 3).map((n) => n.title).join(", ")})` : ""}
-- 방치된 오래된 아이디어: ${staleNotes.length}개
+  const recentCount = recentNotes.length;
+  const staleCount = staleNotes.length;
+  const recentTitles = recentNotes.slice(0, 3).map((n) => n.title).join(", ");
 
-채찍질 강도: ${whipDesc[whipLevel as keyof typeof whipDesc] ?? "보통"}
+  const systemPrompt = `당신은 크리에이터에게 짧은 푸시 알림 메시지를 보내는 AI입니다.
+규칙:
+1. 최근 7일 새 아이디어가 3개 이상이면 반드시 "SKIP" 한 단어만 출력.
+2. 채찍질이 필요한 경우, 한국어 메시지 한 줄만 출력. 절대 설명·분석·줄바꿈 없이.
+3. 메시지는 이모지 1개 포함, 공백 포함 30자 이내.
+4. "SKIP" 또는 메시지 외에 다른 텍스트는 절대 출력 금지.
 
-이 크리에이터에게 오늘 채찍질이 필요한지 판단해줘.
-- 최근 활발히 활동 중(7일 내 3개 이상)이면 "SKIP"
-- 채찍질이 필요하면 35자 이내 한국어 푸시 메시지만 출력 (이모지 1개 포함, 다른 말 하지 마)`;
+예시 출력 형식:
+🔥 아이디어 3개가 기다리고 있어요!
+💡 오늘 아이디어 하나만 적어볼까요?
+📌 방치된 아이디어, 오늘 하나 꺼내봐요`;
+
+  const userPrompt = `크리에이터: ${userName}
+최근 7일 새 아이디어: ${recentCount}개${recentCount > 0 ? ` (${recentTitles})` : ""}
+방치된 오래된 아이디어: ${staleCount}개
+채찍질 강도: ${whipStyle[whipLevel as keyof typeof whipStyle] ?? whipStyle.normal}`;
 
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
@@ -92,14 +107,18 @@ async function generateMessage(
     },
     body: JSON.stringify({
       model: MODEL,
-      max_tokens: 80,
-      messages: [{ role: "user", content: prompt }],
+      max_tokens: 60,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
     }),
   });
 
   const data = await res.json();
   const text: string = data.choices?.[0]?.message?.content?.trim() ?? "";
 
-  if (!text || text.includes("SKIP")) return null;
-  return text;
+  if (!text || text === "SKIP") return null;
+  // 혹시 모델이 지시를 어기고 여러 줄 출력한 경우 첫 줄만 사용
+  return text.split("\n")[0].trim() || null;
 }
