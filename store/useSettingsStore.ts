@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { profilesApi } from "../lib/api/profilesApi";
 
 export type WhipLevel = "light" | "normal" | "hard";
+export type InputMode = "idea" | "note";
 
 interface SettingsState {
   userName: string;
@@ -9,6 +10,7 @@ interface SettingsState {
   notificationEnabled: boolean;
   notificationTime: string;
   whipLevel: WhipLevel;
+  inputMode: InputMode;
   initialized: boolean;
   initializeFromDB: (userId: string, fallbackName?: string) => Promise<void>;
   setUserName: (name: string, userId?: string) => void;
@@ -16,6 +18,7 @@ interface SettingsState {
   setNotificationEnabled: (enabled: boolean, userId?: string) => void;
   setNotificationTime: (time: string, userId?: string) => void;
   setWhipLevel: (level: WhipLevel, userId?: string) => void;
+  setInputMode: (mode: InputMode, userId?: string) => void;
 }
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
@@ -24,6 +27,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   notificationEnabled: true,
   notificationTime: "09:00",
   whipLevel: "normal",
+  inputMode: "idea",
   initialized: false,
 
   initializeFromDB: async (userId, fallbackName) => {
@@ -35,6 +39,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         notificationEnabled: profile.notification_enabled,
         notificationTime: profile.notification_time,
         whipLevel: profile.whip_level as WhipLevel,
+        inputMode: (profile.input_mode ?? "idea") as InputMode,
         initialized: true,
       });
     } else {
@@ -47,6 +52,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         whip_level: get().whipLevel,
         notification_enabled: get().notificationEnabled,
         notification_time: get().notificationTime,
+        input_mode: get().inputMode,
       });
     }
   },
@@ -74,5 +80,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   setWhipLevel: (whipLevel, userId) => {
     set({ whipLevel });
     if (userId) profilesApi.upsert({ id: userId, whip_level: whipLevel });
+  },
+
+  setInputMode: (inputMode, userId) => {
+    set({ inputMode });
+    if (userId) profilesApi.upsert({ id: userId, input_mode: inputMode });
   },
 }));

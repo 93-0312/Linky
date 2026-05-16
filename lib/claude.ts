@@ -19,8 +19,58 @@ const MODEL = "openai/gpt-5.3-chat";
 
 // ─── 시스템 프롬프트 ──────────────────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `당신은 콘텐츠 크리에이터의 아이디어 1단계 적재를 도와주는 AI 비서입니다.
+// 플랫폼별 도달률 최적화 가이드
+const PLATFORM_GUIDES: Record<string, string> = {
+  유튜브: `[유튜브 최적화]
+- 제목: 40-60자, 검색 키워드를 앞에 배치, 숫자/비교/질문형 우선
+- 타겟: 검색 의도 기반으로 구체적으로 (예: "독립 1년차 직장인")
+- 공식 우선순위: "숫자+행동+결과" > "이유형" > "비교형"
+- 썸네일 텍스트 고려: 3-5단어로 임팩트 있게`,
+
+  인스타그램: `[인스타그램 최적화]
+- 제목/훅: 1-2줄, 감성적·공감형, 릴스 첫 1초에 끌리는 문구
+- 타겟: 감성 소비자, 비주얼 중심 (예: "20대 감성 추구 여성")
+- 공식 우선순위: "공감형 한 줄" > "챌린지형" > "감성 서사형"
+- 해시태그 연계 키워드를 tags에 반드시 포함`,
+
+  블로그: `[블로그 최적화]
+- 제목: 검색 의도 직접 반영, 롱테일 키워드 포함, 50자 내외
+- 타겟: 정보 검색·문제 해결 의도 (예: "처음 재테크 시작하는 30대")
+- 공식 우선순위: "방법/팁형" > "완전가이드형" > "질문+답변형"
+- tags에 검색에 쓰일 SEO 키워드 포함`,
+
+  팟캐스터: `[팟캐스트 최적화]
+- 제목: 에피소드 주제 명확, 게스트/화제 인물 언급 시 효과적
+- 타겟: 심층 정보 추구, 이동 중 청취자 (예: "커리어 고민 중인 직장인")
+- 공식 우선순위: "에피소드 주제형" > "인터뷰형" > "토픽 논쟁형"
+- 청각 콘텐츠이므로 시각 요소 제거, 스토리/대화형 구성 유도`,
+
+  틱톡: `[틱톡 최적화]
+- 제목/훅: 첫 3초 집중, 짧고 자극적, 반전·충격·챌린지형
+- 타겟: Z세대·MZ세대 트렌드 소비자 (예: "트렌드에 민감한 10-20대")
+- 공식 우선순위: "챌린지형" > "반전/충격형" > "비교형"
+- 트렌드 사운드·밈 연계 가능성을 context에 언급`,
+
+  기타: `[범용 최적화]
+- 다양한 플랫폼에 범용적으로 활용 가능한 형식
+- 타겟: 핵심 관심사 중심으로 구체화
+- 공식: 숫자형/공감형/정보형 균형 있게`,
+};
+
+function buildSystemPrompt(platforms: string[]): string {
+  const guides = platforms
+    .map((p) => PLATFORM_GUIDES[p] ?? PLATFORM_GUIDES["기타"])
+    .join("\n\n");
+
+  const platformNames = platforms.join(", ");
+
+  return `당신은 콘텐츠 크리에이터의 아이디어 1단계 적재를 도와주는 AI 비서입니다.
 사용자가 던진 거친 아이디어를 받아서, 나중에 2단계(선별)에서 꺼내 쓸 수 있는 매력적인 아이디어들로 변환해주세요.
+
+【활동 플랫폼】: ${platformNames}
+아래 플랫폼별 가이드를 반드시 적용하여 각 플랫폼에서 실제 노출과 도달이 극대화되는 제목·타겟·맥락을 생성하세요.
+
+${guides}
 
 다음 JSON만 반환하세요. 다른 텍스트나 마크다운 없이 JSON만 반환하세요:
 {
@@ -30,9 +80,9 @@ const SYSTEM_PROMPT = `당신은 콘텐츠 크리에이터의 아이디어 1단�
   "tags": ["키워드1", "키워드2", "키워드3"],
   "derivedIdeas": [
     {
-      "context": "이 아이디어가 통하는 맥락/트렌드 한 줄",
-      "target": "정확한 타겟 독자/시청자",
-      "expectedTitle": "클릭 유도형 예상 제목"
+      "context": "이 아이디어가 통하는 맥락/트렌드 한 줄 (플랫폼 알고리즘 특성 반영)",
+      "target": "플랫폼별 정확한 타겟 독자/시청자 (나이·관심사·상황 구체화)",
+      "expectedTitle": "해당 플랫폼에서 클릭·노출 극대화 제목"
     }
   ],
   "titleOptions": [
@@ -43,40 +93,47 @@ const SYSTEM_PROMPT = `당신은 콘텐츠 크리에이터의 아이디어 1단�
 }
 
 규칙:
-- derivedIdeas는 정확히 3개. 각각 유머형/감성형/공감형/정보형/도전형 중 서로 다른 타입으로 구성
+- derivedIdeas는 정확히 3개. 플랫폼이 여러 개면 각 아이디어가 서로 다른 플랫폼 특성을 반영
+- 각 derivedIdea는 유머형/감성형/공감형/정보형/도전형 중 서로 다른 타입으로 구성
 - 메모의 핵심 장면/소재/반전 포인트를 아이디어 안에 반드시 녹일 것
-- tags는 최대 6개
-- 플랫폼 언급 있으면 해당 플랫폼 포맷 고려, 없으면 범용으로`;
+- tags는 최대 6개, 플랫폼 SEO/해시태그 관점에서 선택
+- titleOptions 3개는 위 플랫폼 가이드의 공식 우선순위를 따를 것`;
+}
 
 // ─── 공개 API ─────────────────────────────────────────────────────────────────
 
-export async function processIdea(text: string): Promise<AIProcessResult> {
+export async function processIdea(
+  text: string,
+  platforms: string[] = ["기타"],
+): Promise<AIProcessResult> {
   if (!OPENROUTER_API_KEY) {
-    // API 키 미설정 시 mock으로 동작 (개발/테스트용)
     await new Promise((r) => setTimeout(r, 1200));
-    return buildMockResult(text);
+    return buildMockResult(text, platforms);
   }
-  return callOpenRouter(text);
+  return callOpenRouter(text, platforms);
 }
 
 // ─── OpenRouter 호출 ──────────────────────────────────────────────────────────
 
-async function callOpenRouter(text: string): Promise<AIProcessResult> {
+async function callOpenRouter(
+  text: string,
+  platforms: string[],
+): Promise<AIProcessResult> {
+  const systemPrompt = buildSystemPrompt(platforms);
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${OPENROUTER_API_KEY}`,
       "Content-Type": "application/json",
-      // TODO: 배포 도메인으로 변경 (오픈라우터 대시보드 통계에 표시됨)
       "HTTP-Referer": "https://linky.app",
       "X-Title": "Linky",
     },
     body: JSON.stringify({
       model: MODEL,
-      max_tokens: 800,
+      max_tokens: 900,
       response_format: { type: "json_object" },
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: systemPrompt },
         { role: "user", content: text },
       ],
     }),
@@ -102,18 +159,19 @@ async function callOpenRouter(text: string): Promise<AIProcessResult> {
 
 // ─── Mock (API 키 없을 때 폴백) ───────────────────────────────────────────────
 
-function buildMockResult(text: string): AIProcessResult {
+function buildMockResult(text: string, platforms: string[]): AIProcessResult {
   const keywords = extractKeywords(text);
   const details = extractMemoDetails(text);
   const mainKeyword = keywords[0] ?? details.primary ?? "콘텐츠";
+  const primaryPlatform = platforms[0] ?? "기타";
 
   return {
     suggestedCategoryName: "초안",
     contentType: inferContentType(text),
     summary: buildOriginalSummary(text),
     tags: mergeTags(keywords, details.tags),
-    derivedIdeas: buildDerivedIdeasFromMemo({ keyword: mainKeyword, details }),
-    titleOptions: buildTitleOptionsFromMemo({ keyword: mainKeyword, details }),
+    derivedIdeas: buildDerivedIdeasFromMemo({ keyword: mainKeyword, details, platforms }),
+    titleOptions: buildTitleOptionsFromMemo({ keyword: mainKeyword, details, platform: primaryPlatform }),
   };
 }
 
@@ -214,75 +272,152 @@ function pick3DistinctTypes(seedText: string): [IdeaType, IdeaType, IdeaType] {
   ];
 }
 
+// 플랫폼별 타겟/맥락/제목 특성
+const PLATFORM_IDEA_TRAITS: Record<
+  string,
+  { targetSuffix: string; contextPrefix: string; titleStyle: (kw: string, scene: string) => string }
+> = {
+  유튜브: {
+    targetSuffix: " (유튜브 검색 사용자)",
+    contextPrefix: "유튜브 검색 알고리즘에 최적화된 ",
+    titleStyle: (kw, scene) => `${kw} 완벽 정리 | ${scene} 핵심만 3분 요약`,
+  },
+  인스타그램: {
+    targetSuffix: " (인스타·릴스 팔로워)",
+    contextPrefix: "릴스 첫 1초 훅으로 바이럴 가능한 ",
+    titleStyle: (kw, scene) => `${scene}에서 ${kw}? 이건 꼭 봐야 해✨`,
+  },
+  블로그: {
+    targetSuffix: " (정보 검색 의도)",
+    contextPrefix: "SEO 검색 상위노출 가능한 ",
+    titleStyle: (kw, scene) => `${kw} 완전 가이드 | ${scene} 방법 총정리`,
+  },
+  팟캐스터: {
+    targetSuffix: " (이동 중 청취자)",
+    contextPrefix: "청각 몰입형 스토리로 구성된 ",
+    titleStyle: (kw, scene) => `Ep. ${kw}: ${scene}의 진짜 이야기`,
+  },
+  틱톡: {
+    targetSuffix: " (틱톡 Z세대)",
+    contextPrefix: "틱톡 트렌드 챌린지로 바이럴 가능한 ",
+    titleStyle: (kw, scene) => `${scene}했다가 이렇게 됨 😱 #${kw}챌린지`,
+  },
+  기타: {
+    targetSuffix: "",
+    contextPrefix: "",
+    titleStyle: (kw, scene) => `${kw} — ${scene}의 모든 것`,
+  },
+};
+
 function buildDerivedIdeasFromMemo({
   keyword,
   details,
+  platforms,
 }: {
   keyword: string;
   details: ReturnType<typeof extractMemoDetails>;
+  platforms: string[];
 }): DerivedIdea[] {
   const scene = details.scene ?? `${keyword} 관련 장면`;
   const twist = details.twist ? `반전: ${details.twist}` : null;
   const [t1, t2, t3] = pick3DistinctTypes(`${keyword}|${scene}|${twist ?? ""}`);
 
-  const toIdea = (type: IdeaType): DerivedIdea => {
+  // 플랫폼 순환 배정: 아이디어 3개에 플랫폼 특성 분배
+  const p0 = PLATFORM_IDEA_TRAITS[platforms[0]] ?? PLATFORM_IDEA_TRAITS["기타"];
+  const p1 = PLATFORM_IDEA_TRAITS[platforms[1] ?? platforms[0]] ?? p0;
+  const p2 = PLATFORM_IDEA_TRAITS[platforms[2] ?? platforms[0]] ?? p0;
+  const traits = [p0, p1, p2];
+
+  const toIdea = (type: IdeaType, trait: typeof p0): DerivedIdea => {
     switch (type) {
       case "유머형":
         return {
-          context: `사소한 ${keyword} 순간을 웃기게 뒤집는 포맷 (${scene})`,
-          target: "짧게 웃고 넘길 콘텐츠를 찾는 사람",
+          context: `${trait.contextPrefix}사소한 ${keyword} 순간을 웃기게 뒤집는 포맷 (${scene})`,
+          target: `짧게 웃고 넘길 콘텐츠를 찾는 사람${trait.targetSuffix}`,
           expectedTitle: twist
             ? `${scene}… 근데 ${details.twist}`
             : `${scene}에서 나만 이러는 거야?`,
         };
       case "감성형":
         return {
-          context: `한 장면으로 감정을 끌어올리는 내레이션 중심 (${scene})`,
-          target: "잔잔한 몰입/공감형 콘텐츠를 좋아하는 사람",
-          expectedTitle: `${scene} 그날, 마음이 조용해졌다`,
+          context: `${trait.contextPrefix}한 장면으로 감정을 끌어올리는 내레이션 중심 (${scene})`,
+          target: `잔잔한 몰입/공감형 콘텐츠를 좋아하는 사람${trait.targetSuffix}`,
+          expectedTitle: trait.titleStyle(keyword, scene),
         };
       case "공감형":
         return {
-          context: `다들 겪는 상황을 정확히 찌르는 공감 포인트 (${scene})`,
-          target: "일상 공감 밈/릴스를 즐기는 사람",
+          context: `${trait.contextPrefix}다들 겪는 상황을 정확히 찌르는 공감 포인트 (${scene})`,
+          target: `일상 공감 콘텐츠를 즐기는 사람${trait.targetSuffix}`,
           expectedTitle: `${keyword} 할 때 꼭 나오는 그 상황`,
         };
       case "정보형":
         return {
-          context: `장면 속 문제를 해결하는 정보/팁으로 전환 (${scene})`,
-          target: `${keyword}을(를) 더 잘하고 싶은 입문자`,
+          context: `${trait.contextPrefix}장면 속 문제를 해결하는 정보/팁으로 전환 (${scene})`,
+          target: `${keyword}을(를) 더 잘하고 싶은 입문자${trait.targetSuffix}`,
           expectedTitle: `${keyword} 초보가 ${scene}에서 바로 쓰는 3가지 팁`,
         };
       case "도전형":
         return {
-          context: `짧은 기간 미션으로 참여 유도 (${scene})`,
-          target: "챌린지/습관 만들기에 관심 있는 사람",
+          context: `${trait.contextPrefix}짧은 기간 미션으로 참여 유도 (${scene})`,
+          target: `챌린지/습관 만들기에 관심 있는 사람${trait.targetSuffix}`,
           expectedTitle: `${keyword} 7일 챌린지: ${scene}부터 바꿔보기`,
         };
     }
   };
 
-  return [toIdea(t1), toIdea(t2), toIdea(t3)];
+  return [toIdea(t1, traits[0]), toIdea(t2, traits[1]), toIdea(t3, traits[2])];
 }
+
+const PLATFORM_TITLE_FORMULAS: Record<
+  string,
+  (kw: string, scene: string, hook: string) => TitleOption[]
+> = {
+  유튜브: (kw, scene, hook) => [
+    { formula: "숫자+행동+결과", title: `${kw} 7일 실험 결과 | 바뀐 것 3가지` },
+    { formula: "검색의도형", title: `${kw} 하는 방법 | ${scene} 완전 정복` },
+    { formula: "비교형", title: `${kw} 잘하는 사람 vs 못하는 사람 | ${hook}` },
+  ],
+  인스타그램: (kw, scene, hook) => [
+    { formula: "감성 한 줄", title: `${scene}에서 ${kw}를 시작했더니 ✨` },
+    { formula: "챌린지형", title: `${kw} 7일 챌린지 도전 🔥 #${kw}챌린지` },
+    { formula: "공감형", title: `${kw} 할 때 이런 거 나만 느끼는 거야? 🥹` },
+  ],
+  블로그: (kw, scene, hook) => [
+    { formula: "완전가이드형", title: `${kw} 완벽 정리 | ${scene} A to Z 가이드` },
+    { formula: "질문+답변형", title: `${kw}를 시작해야 할까요? ${hook}` },
+    { formula: "숫자+팁형", title: `${kw} 초보라면 꼭 알아야 할 7가지` },
+  ],
+  팟캐스터: (kw, scene, hook) => [
+    { formula: "에피소드형", title: `Ep. ${kw}: ${scene}의 솔직한 이야기` },
+    { formula: "질문형", title: `우리는 왜 ${kw}를 어렵게 생각할까? | ${hook}` },
+    { formula: "인터뷰형", title: `${kw} 전문가에게 직접 물어봤습니다` },
+  ],
+  틱톡: (kw, scene, hook) => [
+    { formula: "반전형", title: `${scene}했다가 이렇게 됨 😱` },
+    { formula: "챌린지형", title: `${kw} 챌린지 해봤는데 결과가 ㄷㄷ #${kw}` },
+    { formula: "훅형", title: `${kw} 안 하면 손해라고? | ${hook}` },
+  ],
+  기타: (kw, scene, hook) => [
+    { formula: "숫자+행동+결과", title: `${kw} 7일 해보고 바뀐 것 3가지` },
+    { formula: "역발상", title: `${scene}에서 ${kw}를 '반대로' 해봤더니…` },
+    { formula: "타겟호명", title: `${kw} 하다가 ${hook} 경험 있는 사람?` },
+  ],
+};
 
 function buildTitleOptionsFromMemo({
   keyword,
   details,
+  platform,
 }: {
   keyword: string;
   details: ReturnType<typeof extractMemoDetails>;
+  platform: string;
 }): TitleOption[] {
   const scene = details.scene ?? keyword;
   const hook = details.twist ? `근데 ${details.twist}` : "결과가 의외였다";
-
-  return [
-    { formula: "숫자+행동+결과", title: `${keyword} 7일 해보고 바뀐 것 3가지` },
-    {
-      formula: "역발상",
-      title: `${scene}에서 ${keyword}를 '반대로' 해봤더니…`,
-    },
-    { formula: "타겟호명", title: `${keyword} 하다가 ${hook} 경험 있는 사람?` },
-  ];
+  const formulaFn =
+    PLATFORM_TITLE_FORMULAS[platform] ?? PLATFORM_TITLE_FORMULAS["기타"];
+  return formulaFn(keyword, scene, hook);
 }
 
 // ─── Drill-Down (파생 아이디어 깊게 파고들기) ────────────────────────────────

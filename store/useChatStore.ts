@@ -4,6 +4,7 @@ import { ChatMessage, DerivedIdea, DrillDownResult, Note } from "../types";
 import { drillDownIdea, processIdea } from "../lib/claude";
 import { useCategoryStore } from "./useCategoryStore";
 import { useAuthStore } from "./useAuthStore";
+import { useSettingsStore } from "./useSettingsStore";
 import { generateId } from "../lib/uuid";
 
 let _msgId = 0;
@@ -131,7 +132,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set((s) => ({ messages: [...s.messages, userMsg], isTyping: true }));
 
     try {
-      const result = await processIdea(text);
+      const platforms = useSettingsStore.getState().platforms;
+      const result = await processIdea(text, platforms);
 
       const { categories } = useCategoryStore.getState();
       const resolvedCategoryId =
@@ -297,7 +299,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set((s) => ({ generatingIds: [...s.generatingIds, noteId] }));
     try {
       const input = note.rawContent.trim() || note.title;
-      const result = await processIdea(input);
+      const platforms = useSettingsStore.getState().platforms;
+      const result = await processIdea(input, platforms);
 
       const patch = {
         derivedIdeas: result.derivedIdeas,

@@ -12,8 +12,11 @@ import { InputBar } from "../../components/chat/InputBar";
 import { IdeaFormSheet, IdeaFormSheetRef, EditingNote } from "../../components/sheet/IdeaFormSheet";
 import { useChatStore } from "../../store/useChatStore";
 import { useCategoryStore } from "../../store/useCategoryStore";
+import { useSettingsStore } from "../../store/useSettingsStore";
+import { useAuthStore } from "../../store/useAuthStore";
 import { useDeleteNote } from "../../lib/api/useNotesMutation";
 import { useAppTheme } from "../../lib/theme";
+import type { InputMode } from "../../components/chat/InputBar";
 import type { ChatMessage, Note } from "../../types";
 
 type ListItem =
@@ -148,6 +151,8 @@ export default function NoteScreen() {
   const { colors } = useAppTheme();
   const { messages, notes, isTyping, sendMessage, confirmNote } = useChatStore();
   const { categories } = useCategoryStore();
+  const { inputMode, setInputMode } = useSettingsStore();
+  const { user } = useAuthStore();
   const deleteNote = useDeleteNote();
   const listRef = useRef<FlatList>(null);
   const sheetRef = useRef<IdeaFormSheetRef>(null);
@@ -155,6 +160,10 @@ export default function NoteScreen() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
     () => categories.find((c) => c.isDefault)?.id ?? categories[0]?.id ?? null
   );
+
+  const handleInputModeChange = (mode: InputMode) => {
+    setInputMode(mode, user?.id);
+  };
 
   const scrollToBottom = () =>
     setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 80);
@@ -287,6 +296,8 @@ export default function NoteScreen() {
           onSend={(text) => sendMessage(text, selectedCategoryId)}
           selectedCategoryId={selectedCategoryId}
           onCategoryChange={setSelectedCategoryId}
+          inputMode={inputMode}
+          onInputModeChange={handleInputModeChange}
         />
       </KeyboardAvoidingView>
 

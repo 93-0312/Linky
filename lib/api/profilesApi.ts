@@ -7,6 +7,7 @@ export type Profile = {
   whip_level: string;
   notification_enabled: boolean;
   notification_time: string;
+  input_mode: "idea" | "note";
   push_token?: string | null;
 };
 
