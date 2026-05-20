@@ -14,8 +14,15 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.linky"
+      "supportsTablet": false,
+      "bundleIdentifier": "com.linkyapp.ios",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSUserNotificationUsageDescription": "아이디어 기록 알림을 받기 위해 알림 권한이 필요합니다."
+      },
+      "entitlements": {
+        "aps-environment": "production"
+      }
     },
     "android": {
       "package": "com.linky.app",
@@ -32,7 +39,19 @@
     "plugins": [
       "expo-router",
       "expo-web-browser",
-      "expo-notifications"
-    ]
+      [
+        "expo-notifications",
+        {
+          "iosDisplayInForeground": true
+        }
+      ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "5b2ab062-7e1d-4649-9d4d-c37f0729f9a5"
+      }
+    },
+    "owner": "layne.lee"
   }
 }

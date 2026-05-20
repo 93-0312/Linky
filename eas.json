@@ -17,6 +17,9 @@
       }
     },
     "production": {
+      "ios": {
+        "resourceClass": "m-medium"
+      },
       "android": {
         "buildType": "app-bundle"
       }
@@ -24,6 +27,11 @@
   },
   "submit": {
     "production": {
+      "ios": {
+        "appleId": "dlwogus432@naver.com",
+        "ascAppId": "6771379076",
+        "appleTeamId": "2W7Z2W7QR4"
+      },
       "android": {
         "serviceAccountKeyPath": "./google-services-key.json",
         "track": "internal"
