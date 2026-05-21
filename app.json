@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.linky.ios",
-      "buildNumber": "5",
+      "buildNumber": "6",
       "infoPlist": {
         "NSUserNotificationUsageDescription": "아이디어 기록 알림을 받기 위해 알림 권한이 필요합니다."
       },
