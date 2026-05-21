@@ -22,7 +22,9 @@
       },
       "entitlements": {
         "aps-environment": "production",
-        "com.apple.developer.applesignin": ["Default"]
+        "com.apple.developer.applesignin": [
+          "Default"
+        ]
       }
     },
     "android": {
@@ -51,9 +53,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "5b2ab062-7e1d-4649-9d4d-c37f0729f9a5"
+        "projectId": "cdff8910-54e0-4ca9-9558-1f0335839817"
       }
     },
-    "owner": "layne.lee"
+    "owner": "laynelee"
   }
 }
