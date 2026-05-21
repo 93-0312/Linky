@@ -1,12 +1,12 @@
 import React from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Platform, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "../store/useAuthStore";
 import { useAppTheme } from "../lib/theme";
 
 export default function LoginScreen() {
-  const { signInWithGoogle, signInWithKakao } = useAuthStore();
+  const { signInWithGoogle, signInWithKakao, signInWithApple } = useAuthStore();
   const { colors } = useAppTheme();
 
   return (
@@ -72,6 +72,27 @@ export default function LoginScreen() {
               Google로 계속하기
             </Text>
           </TouchableOpacity>
+
+          {Platform.OS === "ios" && (
+            <TouchableOpacity
+              onPress={signInWithApple}
+              activeOpacity={0.8}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 10,
+                paddingVertical: 16,
+                borderRadius: 16,
+                backgroundColor: "#000000",
+              }}
+            >
+              <Ionicons name="logo-apple" size={22} color="#FFFFFF" />
+              <Text style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "700", letterSpacing: -0.3 }}>
+                Apple로 계속하기
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
       </View>

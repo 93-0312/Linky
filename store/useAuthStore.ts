@@ -3,6 +3,8 @@ import { Platform } from "react-native";
 import { Session, User } from "@supabase/supabase-js";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
+import * as AppleAuthentication from "expo-apple-authentication";
+import * as Crypto from "expo-crypto";
 import { supabase } from "../lib/supabase";
 import { useChatStore } from "./useChatStore";
 import { useCategoryStore } from "./useCategoryStore";
@@ -29,6 +31,7 @@ interface AuthState {
   initialize: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signInWithKakao: () => Promise<void>;
+  signInWithApple: () => Promise<void>;
   signOut: () => Promise<void>;
   deleteAccount: () => Promise<void>;
 }
@@ -134,6 +137,43 @@ export const useAuthStore = create<AuthState>((set) => ({
         const { error: sessionError } = await supabase.auth.exchangeCodeForSession(result.url);
         if (sessionError) console.warn("[Kakao] session error:", sessionError.message);
       }
+    }
+  },
+
+  signInWithApple: async () => {
+    if (Platform.OS !== "ios") return;
+
+    // 랜덤 nonce 생성 후 SHA256 해싱 (Apple 보안 요구사항)
+    const rawNonce = Array.from({ length: 32 }, () =>
+      Math.random().toString(36)[2] ?? "a"
+    ).join("");
+    const hashedNonce = await Crypto.digestStringAsync(
+      Crypto.CryptoDigestAlgorithm.SHA256,
+      rawNonce
+    );
+
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+        nonce: hashedNonce,
+      });
+
+      const { identityToken } = credential;
+      if (!identityToken) throw new Error("Apple 인증 토큰을 받지 못했습니다.");
+
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: "apple",
+        token: identityToken,
+        nonce: rawNonce,
+      });
+
+      if (error) console.warn("[Apple] signInWithIdToken error:", error.message);
+    } catch (e: any) {
+      if (e.code === "ERR_REQUEST_CANCELED") return; // 사용자가 취소
+      console.warn("[Apple] sign in error:", e);
     }
   },
 
